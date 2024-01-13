@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Credit card payment (THAILAND)</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@kcws/reset.css@1.2.1/lib/reset.scss.min.css">
+  <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@kcws/reset.css@1.2.1/lib/reset.scss.css"> -->
+
+  <style>
+    .container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      max-width: 1024px;
+
+      margin: 1.5rem auto;
+      padding: 0px 2rem;
+    }
+
+    .form-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      gap: 1rem;
+    }
+
+    .qrcode-container {
+      display: flex;
+      width: 256px;
+      height: 256px;
+      margin-top: 1rem;
+    }
+
+    .form-field {
+      width: 100%;
+      padding: 0.5rem 1rem;
+    }
+
+    input.form-field {
+      border: 1px solid black;
+      border-radius: 0.22rem;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <form class="form-container">
+      <select id="credit-card-type" class="form-field">
+      </select>
+      <input id="credit-card-number" type="text" size="16" minlength="16" maxlength="16" required
+        placeholder="Credit card number" class="form-field" />
+      <input id="credit-card-amount" type="number" min="1" required placeholder="Amount" class="form-field" />
+    </form>
+    <div id="qrcode" class="qrcode-container" />
+  </div>
+
+  <script>
+    var qrcode = new QRCode(document.getElementById("qrcode"), {});
+    var creditCards = {
+      centralThe1Luxe: {
+        name: "Central the 1 luxe",
+        providerId: "010553801091088",
+        reference: "",
+      },
+      kBankWisdom: {
+        name: "Kbank Wisdom",
+        providerId: "010753600031500",
+        reference: "001971000"
+      },
+      kbankLinePoint: {
+        name: "Kbank Linepoint",
+        providerId: "010753600031500",
+        reference: "001982060"
+      },
+      firstChoice: {
+        name: "Firstchoice",
+        providerId: "010553713356288",
+        reference: "",
+      }
+    }
+
+    var ccTypeElem = document.getElementById("credit-card-type");
+    var ccNumberElem = document.getElementById("credit-card-number");
+    var ccAmountElem = document.getElementById("credit-card-amount");
+
+    function getCreditCardType() {
+      return ccTypeElem.value;
+    }
+
+    function getCreditCardNumber() {
+      return ccNumberElem.value;
+    }
+
+    function getCreditCardAmount() {
+      return ccAmountElem.value;
+    }
+
+    function submit(event) {
+      console.debug("clear current qrcode")
+      qrcode.clear();
+
+      var ccType = getCreditCardType();
+      var ccProvider = creditCards[ccType].providerId;
+      var ccRef = creditCards[ccType].reference;
+      var ccNumber = getCreditCardNumber();
+      var ccAmount = getCreditCardAmount();
+
+      var stChar = "|" // start
+      var nlChar = "\n" // new line
+
+      // Only if credit card number is 16 in length
+      if (ccNumber.length !== 16) {
+        console.debug("credit card number is shorter than 16")
+        return
+      }
+      // Only if credit card amount is greater than 0
+      if (ccAmount <= 0) {
+        console.debug("credit card amount less than 1")
+        return
+      }
+
+      var text = stChar + ccProvider + nlChar + ccNumber + nlChar + ccRef + nlChar + (ccAmount * 100)
+
+      qrcode.makeCode(text);
+    }
+
+    function addCreditCardOptions(select) {
+      Object.keys(creditCards).forEach(key => {
+        var data = creditCards[key]
+        var option = document.createElement("option");
+        option.value = key;
+        option.text = data.name;
+        select.add(option);
+      })
+    }
+
+    addCreditCardOptions(ccTypeElem)
+    ccTypeElem.addEventListener("change", submit)
+    ccNumberElem.addEventListener("input", submit)
+    ccAmountElem.addEventListener("input", submit)
+  </script>
+</body>
+
+</html>
