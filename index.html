@@ -46,30 +46,40 @@
       border: 1px solid black;
       border-radius: 0.22rem;
     }
+
+    a.form-field {
+      text-align: center;
+      color: blue;
+      text-decoration: underline;
+    }
   </style>
 </head>
 
 <body>
   <div class="container">
     <form class="form-container">
-      <select id="credit-card-type" class="form-field">
-      </select>
+      <select id="credit-card-type" class="form-field"></select>
       <input id="credit-card-number" type="text" size="16" minlength="16" maxlength="16" required
         placeholder="Credit card number" class="form-field" />
       <input id="credit-card-amount" type="number" min="1" required placeholder="Amount" class="form-field" />
+      <a id="url" href="#" class="form-field">submit</a>
     </form>
     <div id="qrcode" class="qrcode-container" />
   </div>
 
   <script>
-    var qrcode = new QRCode(document.getElementById("qrcode"), {});
     var creditCards = {
+      "": {
+        name: "Unknown",
+        providerId: "",
+        reference: "",
+      },
       centralThe1Luxe: {
         name: "Central the 1 luxe",
         providerId: "010553801091088",
         reference: "",
       },
-      kBankWisdom: {
+      kbankWisdom: {
         name: "Kbank Wisdom",
         providerId: "010753600031500",
         reference: "001971000"
@@ -83,12 +93,20 @@
         name: "Firstchoice",
         providerId: "010553713356288",
         reference: "",
+      },
+      lotusBeyond: {
+        name: "Lotus beyond",
+        providerId: "010554405887288",
+        reference: ""
       }
     }
 
+    var qrcode = new QRCode(document.getElementById("qrcode"), {});
     var ccTypeElem = document.getElementById("credit-card-type");
     var ccNumberElem = document.getElementById("credit-card-number");
     var ccAmountElem = document.getElementById("credit-card-amount");
+    var urlElem = document.getElementById("url");
+    var queryParams = new URLSearchParams(window.location.search);
 
     function getCreditCardType() {
       return ccTypeElem.value;
@@ -102,11 +120,13 @@
       return ccAmountElem.value;
     }
 
-    function submit(event) {
+    function submit() {
       console.debug("clear current qrcode")
       qrcode.clear();
 
       var ccType = getCreditCardType();
+      console.debug("credit type: " + ccType)
+
       var ccProvider = creditCards[ccType].providerId;
       var ccRef = creditCards[ccType].reference;
       var ccNumber = getCreditCardNumber();
@@ -128,20 +148,48 @@
 
       var text = stChar + ccProvider + nlChar + ccNumber + nlChar + ccRef + nlChar + (ccAmount * 100)
 
+      var url = new URL(window.location.href);
+      url.search = ""
+      url.searchParams.set("t", ccType)
+      url.searchParams.set("n", ccNumber)
+      url.searchParams.set("a", ccAmount)
+      if (url.toString() !== window.location.href) urlElem.href = url
+
       qrcode.makeCode(text);
     }
 
     function addCreditCardOptions(select) {
+      var queryCCType = queryParams.get("type") ||
+        queryParams.get("ty") ||
+        queryParams.get("t");
+      console.log("query type: " + queryCCType)
+
       Object.keys(creditCards).forEach(key => {
         var data = creditCards[key]
         var option = document.createElement("option");
         option.value = key;
         option.text = data.name;
+        if (queryCCType === key) option.selected = true;
         select.add(option);
       })
     }
 
+    function fillFormFromQueryParams() {
+      var queryCCNumber = queryParams.get("number") ||
+        queryParams.get("num") ||
+        queryParams.get("n");
+      console.log("query number: " + queryCCNumber)
+      if (queryCCNumber) ccNumberElem.value = queryCCNumber;
+
+      var queryCCAmount = queryParams.get("amount") || queryParams.get("a");
+      console.log("query amount: " + queryCCAmount)
+      if (queryCCAmount) ccAmountElem.value = queryCCAmount;
+    }
+
     addCreditCardOptions(ccTypeElem)
+    fillFormFromQueryParams()
+    submit()
+
     ccTypeElem.addEventListener("change", submit)
     ccNumberElem.addEventListener("input", submit)
     ccAmountElem.addEventListener("input", submit)
